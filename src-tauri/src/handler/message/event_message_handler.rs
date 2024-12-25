@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use quickxml_to_serde::{xml_string_to_json, Config};
 
-use crate::{handler::event_entity::{Event, EventHandler}, service::global_service::GLOBAL, wcferry::wcf};
+use crate::{handler::event_entity::{Event, EventHandler}, plugin::qingqing_plugin::{free_day, mul_day, one_day}, service::global_service::GLOBAL, wcferry::wcf};
 
 /// 日志打印
 pub struct EventMessageHandler {
@@ -15,7 +15,7 @@ impl EventHandler for EventMessageHandler {
             if msg.r#type == 1 {
                 
                 log::debug!("[{}] 接收到事件推送：{:?}", self.id, msg);
-                if !msg.content.contains("关键词")  {
+                if !msg.content.contains("青青户外报名情况")  {
                     return
                 }
 
@@ -46,15 +46,33 @@ impl EventHandler for EventMessageHandler {
                 if !is_at_me {
                     return;
                 }
-                log::debug!("[{}] 接收到事件有人@我：{:?}", self.id, msg);
-                let wechat_service = global.wechat_service.clone();
-                let text_msg = wcf::TextMsg{
-                    msg: format!("@{} {}",msg.sender.clone()," 事件推送有人at我".to_string()),
+                
+                let res = one_day().await.unwrap();
+                let one_text_msg = wcf::TextMsg{
+                    msg: format!("@{} \r\n{}",msg.sender.clone(),res),
                     receiver: msg.roomid.clone(),
                     aters: msg.sender.clone()
                 };
-                log::debug!("发送的文本信息 -- {:?}",text_msg);
-                wechat_service.lock().unwrap().send_text(text_msg);
+
+                let res = mul_day().await.unwrap();
+                let mul_text_msg = wcf::TextMsg{
+                    msg: format!("@{} \r\n{}",msg.sender.clone(),res),
+                    receiver: msg.roomid.clone(),
+                    aters: msg.sender.clone()
+                };
+
+                let res = free_day().await.unwrap();
+                let free_text_msg = wcf::TextMsg{
+                    msg: format!("@{} \r\n{}",msg.sender.clone(),res),
+                    receiver: msg.roomid.clone(),
+                    aters: msg.sender.clone()
+                };
+
+                let wechat_service = global.wechat_service.clone();
+                let mut wechat_service_lock = wechat_service.lock().unwrap();
+                wechat_service_lock.send_text(one_text_msg);
+                wechat_service_lock.send_text(mul_text_msg);
+                wechat_service_lock.send_text(free_text_msg);
             }
         }
     }

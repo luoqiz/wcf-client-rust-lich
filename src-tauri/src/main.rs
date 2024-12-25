@@ -25,6 +25,7 @@ mod wcferry;
 mod service;
 mod wechat_config;
 mod handler;
+mod plugin;
 
 struct FrontendLogger {
     app_handle: tauri::AppHandle,
